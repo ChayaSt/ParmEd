@@ -7,8 +7,13 @@ Author: Jason M. Swails
 """
 from __future__ import print_function, division
 
+<<<<<<< HEAD
 from parmed.exceptions import ParameterError
 from parmed.topologyobjects import (NoUreyBradley, BondType, DihedralTypeList,
+=======
+from parmed.exceptions import ParameterError, ParameterWarning
+from parmed.topologyobjects import (NoUreyBradley, DihedralTypeList,
+>>>>>>> remotes/swails/ureybrad
                 AtomType, DihedralType, UnassignedAtomType)
 from parmed.utils import canonical_improper_order
 from parmed.utils.six.moves import range
@@ -240,7 +245,7 @@ class ParameterSet(object):
             params.angle_types[key] = typ
             params.angle_types[tuple(reversed(key))] = typ
             if angle.funct == 5:
-                key = (angle.atom1.type, angle.atom3.type)
+                key = (angle.atom1.type, angle.atom2.type, angle.atom3.type)
                 params.urey_bradley_types[key] = NoUreyBradley
                 params.urey_bradley_types[tuple(reversed(key))] = NoUreyBradley
         for dihedral in struct.dihedrals:
@@ -349,12 +354,14 @@ class ParameterSet(object):
             typ = copy(cmap.type)
             params.cmap_types[key] = typ
             params.cmap_types[tuple(reversed(key))] = typ
+        urey_brads_preassigned = len(params.urey_bradley_types) > 0
         for urey in struct.urey_bradleys:
-            key = (min(urey.atom1.type, urey.atom3.type), urey.atom2.type,
-                   max(urey.atom1.type, urey.atom3.type))
-            if key not in params.urey_bradley_types:
+            if urey.type is None or urey.type is NoUreyBradley: continue
+            key = _find_ureybrad_key(urey)
+            if key is None: continue
+            if urey_brads_preassigned and key not in params.urey_bradley_types:
                 warnings.warn('Angle corresponding to Urey-Bradley type not '
-                              'found')
+                              'found', ParameterWarning)
             typ = copy(urey.type)
             if urey.type is None or urey.type is NoUreyBradley:
                 typ = BondType(0.0, 0.0)
@@ -469,3 +476,15 @@ class ParameterSet(object):
                 assert isinstance(residue, ResidueTemplate), 'Wrong type!'
                 for atom in residue:
                     atom.atom_type = self.atom_types[atom.type]
+
+def _find_ureybrad_key(urey):
+    """
+    Finds a key for a given Urey-Bradley by finding the middle atom in an angle.
+    Raises a ParameterWarning if no middle atom found
+    """
+    a1, a2 = urey.atom1, urey.atom2
+    shared_bond_partners = set(a1.bond_partners) & set(a2.bond_partners)
+    if len({a.type for a in shared_bond_partners}) != 1:
+        warnings.warn('Urey-Bradley %r shares multiple central atoms',
+                      ParameterWarning)
+    return (a1.type, list(shared_bond_partners)[0].type, a2.type)
