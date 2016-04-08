@@ -7,13 +7,8 @@ Author: Jason M. Swails
 """
 from __future__ import print_function, division
 
-<<<<<<< HEAD
-from parmed.exceptions import ParameterError
-from parmed.topologyobjects import (NoUreyBradley, BondType, DihedralTypeList,
-=======
 from parmed.exceptions import ParameterError, ParameterWarning
 from parmed.topologyobjects import (NoUreyBradley, DihedralTypeList,
->>>>>>> remotes/swails/ureybrad
                 AtomType, DihedralType, UnassignedAtomType)
 from parmed.utils import canonical_improper_order
 from parmed.utils.six.moves import range
@@ -363,9 +358,6 @@ class ParameterSet(object):
                 warnings.warn('Angle corresponding to Urey-Bradley type not '
                               'found', ParameterWarning)
             typ = copy(urey.type)
-            if urey.type is None or urey.type is NoUreyBradley:
-                typ = BondType(0.0, 0.0)
-                print(typ)
             params.urey_bradley_types[key] = typ
             params.urey_bradley_types[tuple(reversed(key))] = typ
         for adjust in struct.adjusts:
